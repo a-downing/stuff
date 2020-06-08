@@ -20,13 +20,21 @@ enum class TokenType {
     NUMBER,
     SEMICOLON,
 
-    MAX_VALUE
+    END_VALUE
 };
 
 struct Token {
     using value_type = TokenType;
     value_type value;
     std::string text;
+
+    constexpr static std::size_t index(value_type v) {
+        return static_cast<std::size_t>(v);
+    }
+
+    constexpr static std::size_t max_index() {
+        return static_cast<std::size_t>(TokenType::END_VALUE) - 1;
+    }
 };
 
 struct Expression {
@@ -119,7 +127,7 @@ int main() {
         {TokenType::SEMICOLON, ";"},
     };
 
-    using Parser = Parser<Token, Expression, static_cast<std::size_t>(TokenType::MAX_VALUE)>;
+    using Parser = Parser<Token, std::unique_ptr<Expression>>;
 
     Parser parser;
     std::size_t index = 0;
