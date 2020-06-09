@@ -1,3 +1,6 @@
+#ifndef PARSER_H
+#define PARSER_H
+
 #include <cstddef>
 #include <vector>
 #include <memory>
@@ -6,8 +9,6 @@
 #ifdef __cpp_lib_concepts
 #include <concepts>
 #endif
-
-using namespace std::literals;
 
 #ifdef __cpp_concepts
 template<typename T>
@@ -40,7 +41,7 @@ private:
         int precedence = 0;
         InfixParselet_t func = nullptr;
     };
-    
+
     std::array<PrefixParselet, Token_T::max_index() + 1> m_prefixParselets;
     std::array<InfixParselet, Token_T::max_index() + 1> m_infixParselets;
     const std::vector<Token_T> *m_tokens{};
@@ -112,3 +113,5 @@ public:
         return *m_index == m_tokens->size();
     }
 };
+
+#endif
