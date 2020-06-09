@@ -3,8 +3,9 @@
 #include <cstdio>
 #include <vector>
 #include <fstream>
+#include <concepts>
 
-#include "lexer.h"
+#include "base_lexer.h"
 
 using namespace std::literals;
 
@@ -22,47 +23,33 @@ struct Token {
         caret,
         lparen,
         rparen,
-        semicolon
+        semicolon,
     };
 
-    static constexpr const char *tokenKinds[] = {"identifier", "number", "string", "equals", "minus", "plus", "star", "star_star", "slash", "caret", "lparen", "rparen", "semicolon"};
+    using value_type = Kind;
 
-    Kind kind;
+    Kind value;
     std::string text;
     int line;
     int col;
 
-    std::size_t index() const {
-        return static_cast<std::size_t>(kind);
+    static constexpr std::size_t index(Kind k) {
+        return static_cast<std::size_t>(k);
+    }
+
+    static constexpr const char *tokenKinds[] = {"identifier", "number", "string", "equals", "minus", "plus", "star", "star_star", "slash", "caret", "lparen", "rparen", "semicolon"};
+
+    static constexpr const char *name(Kind k) {
+        return tokenKinds[index(k)];
     }
 };
 
-class TestLexer : public Lexer {
-public:
-    struct Error {
-        std::string error;
-        int line;
-        int col;
-    };
-
-private:
-    std::vector<Token> *m_tokens;
-    std::vector<Error> *m_errors;
-    bool m_fail;
-
-    void make_token(Token::Kind kind) {
-        m_tokens->emplace_back(kind, get_string(), line(), col());
-        auto token = m_tokens->back();
-    }
-
+class TestLexer : public BaseLexer<Token> {
 public:
     void lex(const std::string &str, std::vector<Token> &tokens, std::vector<Error> &errors) {
-        m_tokens = &tokens;
-        m_errors = &errors;
-        m_fail = false;
-        Lexer::lex(str);
+        BaseLexer::lex(str, tokens, errors);
 
-        while(!end() && !m_fail) {
+        while(!end() && ok()) {
             reset();
 
             const char c = consume();
@@ -117,29 +104,33 @@ public:
             }
 
             if(c == '_' || std::isalpha(c)) {
-                eat_identifer();
-                make_token(Token::Kind::identifier);
+                if(eat_identifer()) {
+                    make_token(Token::Kind::identifier);
+                }
             } else if(c == '.' || std::isdigit(c)) {
-                eat_number();
-                make_token(Token::Kind::number);
+                if(eat_number()) {
+                    make_token(Token::Kind::number);
+                }
             } else if(c == '"') {
-                eat_string();
-                make_token(Token::Kind::string);
+                if(eat_string()) {
+                    make_token(Token::Kind::string);
+                }
             } else {
-                m_errors->emplace_back("unhandled character \""s + c + "\"\n", line(), col());
-                m_fail = true;
-                return;
+                add_error("unhandled character \""s + c + "\"\n", line(), col());
+                fail(true);
             }
         }
     }
 
-    void eat_identifer() {
+    bool eat_identifer() {
         while(check('_') || std::isalnum(peek())) {
             advance();
         }
+
+        return true;
     }
 
-    void eat_number() {
+    bool eat_number() {
         while(!end() && std::isdigit(peek())) {
             advance();
         }
@@ -150,15 +141,24 @@ public:
             advance();
         }
 
-        match('e');
-        match('+', '-');
-
-        while(!end() && std::isdigit(peek())) {
+        if(check('e')) {
             advance();
+            match('+', '-');
+
+            if(!std::isdigit(peek())) {
+                add_error("invalid number", line(), col());
+                fail(true);
+            } else {
+                while(!end() && std::isdigit(peek())) {
+                    advance();
+                }
+            }
         }
+
+        return ok();
     }
 
-    void eat_string() {
+    bool eat_string() {
         while(!end() && !check('"')) {
             if(peek() == '\\') {
                 advance();
@@ -173,12 +173,13 @@ public:
         }
 
         if(end()) {
-            m_errors->emplace_back("unterminated string\n", line(), col());
-            m_fail = true;
-            return;
+            add_error("unterminated string\n", line(), col());
+            fail(true);
+        } else {
+            advance();
         }
 
-        advance();
+        return ok();
     }
 };
 
@@ -189,9 +190,9 @@ std::string readFile(const char *filename) {
         return "";
     }
 
-    f.seekg(0, f.end);
+    f.seekg(0, std::ios::end);
     std::size_t size = f.tellg();
-    f.seekg(0, f.beg);
+    f.seekg(0, std::ios::beg);
     std::string str(size, '\0');
     f.read(str.data(), size);
     return str;
@@ -201,16 +202,24 @@ int main() {
     TestLexer lexer;
     std::vector<Token> tokens;
     std::vector<TestLexer::Error> errors;
-    std::string code = readFile("code.txt");
+    std::string code = readFile("../code.txt");
 
-    lexer.lex(code, tokens, errors);
+    //int total = 0;
+    //for(int i = 0; i < 1000000; i++) {
+        tokens.clear();
+        errors.clear();
+        lexer.lex(code, tokens, errors);
+        //total += tokens.size();
+    //}
+
+    //std::printf("total tokens processed: %d\n", total);
 
     for(const auto &token : tokens) {
-        std::printf("token %s: \"%s\"\n    line: %d\n    col: %d\n\n", Token::tokenKinds[token.index()], token.text.c_str(), token.line, token.col);
+        std::printf("token %s: \"%s\"\n    line: %d\n    col: %d\n\n", Token::name(token.value), token.text.c_str(), token.line, token.col);
     }
 
     for(const auto &error : errors) {
-        std::printf("error on line: %d, col: %d: %s\n", error.line, error.col, error.error.c_str());
+        std::printf("error on line: %d, col: %d: %s (%s)\n", error.line, error.col, error.error.c_str(), error.text.c_str());
     }
 
     return 0;

@@ -1,10 +1,11 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef BASE_LEXER_CORE_H
+#define BASE_LEXER_CORE_H
 
 #include <string>
 #include <string_view>
+#include <concepts>
 
-class Lexer {
+class BaseLexerCore {
     const std::string_view *m_str;
     const char *m_current;
     const char *m_start;
@@ -18,11 +19,11 @@ protected:
         return std::string(m_start, m_current - m_start);
     }
 
-    int line() {
+    [[nodiscard]] int line() const {
         return m_line;
     }
 
-    int col() {
+    [[nodiscard]] int col() const {
         return m_col_start;
     }
 
@@ -41,7 +42,7 @@ protected:
         m_col++;
     }
 
-    char peek() const {
+    [[nodiscard]] char peek() const {
         return end() ? '\0' : *m_current;
     }
 
@@ -51,16 +52,16 @@ protected:
         return c;
     }
 
-    bool end() const {
+    [[nodiscard]] bool end() const {
         return m_current >= m_end;
     }
 
-    template<typename ...Args>
+    template<typename ...Args> requires ((std::same_as<char, Args>) && ...)
     bool check(Args ...c) {
-        return !end() && (... || (c == peek()));
+        return !end() && ((c == peek()) || ...);
     }
 
-    template<typename ...Args>
+    template<typename ...Args> requires ((std::same_as<char, Args>) && ...)
     bool match(Args ...c) {
         if(!end() && ((c == peek()) || ...)) {
             advance();

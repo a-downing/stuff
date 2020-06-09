@@ -2,3 +2,4 @@
 .idea/
 *.creator/
 build/
+CMakeLists.txt.user
