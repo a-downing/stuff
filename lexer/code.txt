@@ -1,6 +1,4 @@
 blah = -1 + (2 + 3) * 4;
 name = "Andrew";
 str = "string with \"quotes\" in it";
-a_good_num = 10e-3
-a_bad_num_0 = 10e
-a_bad_num_1 = 10e-
+a_good_num = 10e-3;

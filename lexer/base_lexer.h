@@ -2,6 +2,7 @@
 #define BASE_LEXER_H
 
 #include <string>
+#include <vector>
 #include "base_lexer_core.h"
 
 template<typename T>
@@ -38,11 +39,11 @@ protected:
     }
 
     void add_error(std::string str, int line, int col) {
-        m_errors->emplace_back(str, get_string(), line, col);
+        m_errors->push_back({str, get_string(), line, col});
     }
 
     void make_token(typename Token_T::value_type value) {
-        m_tokens->emplace_back(value, get_string(), line(), col());
+        m_tokens->push_back({value, get_string(), line(), col()});
     }
 
     void lex(const std::string &str, std::vector<Token_T> &tokens, std::vector<Error> &errors) {

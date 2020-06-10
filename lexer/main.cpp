@@ -56,12 +56,6 @@ public:
             bool handled = true;
 
             switch(c) {
-            case ' ':
-            case '\r':
-                break;
-            case '\n':
-                newline();
-                break;
             case '=':
                 make_token(Token::Kind::equals);
                 break;
@@ -99,30 +93,32 @@ public:
                 handled = false;
             }
 
-            if(handled) {
-                continue;
-            }
-
-            if(c == '_' || std::isalpha(c)) {
-                if(eat_identifer()) {
-                    make_token(Token::Kind::identifier);
+            if(!handled) {
+                if(std::isspace(c)) {
+                    if(c == '\n') {
+                        newline();
+                    }
+                } else if(c == '_' || std::isalpha(c)) {
+                    if(eat_identifier()) {
+                        make_token(Token::Kind::identifier);
+                    }
+                } else if(c == '.' || std::isdigit(c)) {
+                    if(eat_number()) {
+                        make_token(Token::Kind::number);
+                    }
+                } else if(c == '"') {
+                    if(eat_string()) {
+                        make_token(Token::Kind::string);
+                    }
+                } else {
+                    add_error("unhandled character \""s + c + "\"\n", line(), col());
+                    fail(true);
                 }
-            } else if(c == '.' || std::isdigit(c)) {
-                if(eat_number()) {
-                    make_token(Token::Kind::number);
-                }
-            } else if(c == '"') {
-                if(eat_string()) {
-                    make_token(Token::Kind::string);
-                }
-            } else {
-                add_error("unhandled character \""s + c + "\"\n", line(), col());
-                fail(true);
             }
         }
     }
 
-    bool eat_identifer() {
+    bool eat_identifier() {
         while(check('_') || std::isalnum(peek())) {
             advance();
         }
@@ -205,11 +201,11 @@ int main() {
     std::string code = readFile("../code.txt");
 
     //int total = 0;
-    //for(int i = 0; i < 1000000; i++) {
-        tokens.clear();
-        errors.clear();
+    //for(int i = 0; i < 10000000; i++) {
+    //    tokens.clear();
+    //    errors.clear();
         lexer.lex(code, tokens, errors);
-        //total += tokens.size();
+    //    total += tokens.size();
     //}
 
     //std::printf("total tokens processed: %d\n", total);
