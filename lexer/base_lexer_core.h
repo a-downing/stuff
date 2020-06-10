@@ -12,6 +12,7 @@ class BaseLexerCore {
     const char *m_end;
     int m_line;
     int m_col;
+    int m_line_start;
     int m_col_start;
 
 protected:
@@ -20,7 +21,7 @@ protected:
     }
 
     [[nodiscard]] int line() const {
-        return m_line;
+        return m_line_start;
     }
 
     [[nodiscard]] int col() const {
@@ -29,15 +30,16 @@ protected:
 
     void reset() {
         m_start = m_current;
+        m_line_start = m_line;
         m_col_start = m_col;
     }
 
-    void newline() {
-        m_line++;
-        m_col = 1;
-    }
-
     void advance() {
+        if(*m_current == '\n') {
+            m_line++;
+            m_col = 0;
+        }
+
         m_current++;
         m_col++;
     }
