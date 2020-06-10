@@ -11,13 +11,20 @@ struct Token {
         number,
         string,
         character,
-        equals,
+        equal,
+        equal_equal,
         minus,
+        minus_minus,
+        minus_equal,
         plus,
+        plus_plus,
+        plus_equal,
         star,
-        star_star,
+        start_equal,
         slash,
+        slash_equal,
         caret,
+        caret_equal,
         lparen, rparen,
         lbrace, rbrace,
         lbracket, rbracket,
@@ -25,11 +32,14 @@ struct Token {
         colon,
         scope_resolution,
         bang,
+        bang_equal,
         comma,
         lt, gt,
         lte, gte,
         lshift, rshift,
         ampersand,
+        ampersand_ampersand,
+        ampersand_equal,
         dot,
         dot_star,
         arrow,
@@ -37,8 +47,12 @@ struct Token {
         macro,
         question,
         percent,
+        percent_equal,
         tilde,
-        pipe
+        tilde_equal,
+        pipe,
+        pipe_pipe,
+        pipe_equal
     };
 
     using value_type = Kind;
@@ -52,7 +66,7 @@ struct Token {
         return static_cast<std::size_t>(k);
     }
 
-    static constexpr const char *tokenKinds[] = {"identifier", "number", "string", "character", "equals", "minus", "plus", "star", "star_star", "slash", "caret", "lparen", "rparen", "lbrace", "rbrace", "lbracket", "rbracket", "semicolon", "colon", "scope_resolution", "bang", "comma", "lt", "gt", "lte", "gte", "lshift", "rshift", "ampersand", "dot", "dot_star", "arrow", "comment", "macro", "question", "percent", "tilde", "pipe"};
+    static constexpr const char *tokenKinds[] = {"identifier", "number", "string", "character", "equal", "equal_equal", "minus", "minus_minus", "minus_equal", "plus", "plus_plus", "plus_equal", "star", "start_equal", "slash", "slash_equal", "caret", "caret_equal", "lparen", "rparen", "lbrace", "rbrace", "lbracket", "rbracket", "semicolon", "colon", "scope_resolution", "bang", "bang_equal", "comma", "lt", "gt", "lte", "gte", "lshift", "rshift", "ampersand", "ampersand_ampersand", "ampersand_equal", "dot", "dot_star", "arrow", "comment", "macro", "question", "percent", "percent_equal", "tilde", "tilde_equal", "pipe", "pipe_pipe", "pipe_equal"};
 
     static constexpr const char *name(Kind k) {
         return tokenKinds[index(k)];
@@ -72,13 +86,30 @@ public:
 
             switch(c) {
             case '=':
-                make_token(Token::Kind::equals);
+                if(match('=')) {
+                    make_token(Token::Kind::equal_equal);
+                } else {
+                    make_token(Token::Kind::equal);
+                }
+
                 break;
             case '+':
-                make_token(Token::Kind::plus);
+                if(match('+')) {
+                    make_token(Token::Kind::plus_plus);
+                } else if(match('=')) {
+                    make_token(Token::Kind::plus_equal);
+                } else {
+                    make_token(Token::Kind::plus);
+                }
+
                 break;
             case '^':
-                make_token(Token::Kind::caret);
+                if(match('=')) {
+                    make_token(Token::Kind::caret_equal);
+                } else {
+                    make_token(Token::Kind::caret);
+                }
+
                 break;
             case '(':
                 make_token(Token::Kind::lparen);
@@ -102,25 +133,54 @@ public:
                 make_token(Token::Kind::semicolon);
                 break;
             case '!':
-                make_token(Token::Kind::bang);
+                if(match('=')) {
+                    make_token(Token::Kind::bang_equal);
+                } else {
+                    make_token(Token::Kind::bang);
+                }
+
                 break;
             case ',':
                 make_token(Token::Kind::comma);
                 break;
             case '&':
-                make_token(Token::Kind::ampersand);
+                if(match('=')) {
+                    make_token(Token::Kind::ampersand_equal);
+                } else if(match('&')) {
+                    make_token(Token::Kind::ampersand_ampersand);
+                } else {
+                    make_token(Token::Kind::ampersand);
+                }
+
                 break;
             case '?':
                 make_token(Token::Kind::question);
                 break;
             case '%':
-                make_token(Token::Kind::percent);
+                if(match('=')) {
+                    make_token(Token::Kind::percent_equal);
+                } else {
+                    make_token(Token::Kind::percent);
+                }
+
                 break;
             case '~':
-                make_token(Token::Kind::tilde);
+                if(match('=')) {
+                    make_token(Token::Kind::tilde_equal);
+                } else {
+                    make_token(Token::Kind::tilde);
+                }
+
                 break;
             case '|':
-                make_token(Token::Kind::pipe);
+                if(match('=')) {
+                    make_token(Token::Kind::pipe_equal);
+                } else if(match('|')) {
+                    make_token(Token::Kind::pipe_pipe);
+                } else {
+                    make_token(Token::Kind::pipe);
+                }
+
                 break;
             case '\\':
                 break;
@@ -143,7 +203,11 @@ public:
 
                 break;
             case '-':
-                if(match('>')) {
+                if(match('-')) {
+                    make_token(Token::Kind::minus_minus);
+                } else if(match('=')) {
+                    make_token(Token::Kind::minus_equal);
+                } else if(match('>')) {
                     make_token(Token::Kind::arrow);
                 } else {
                     make_token(Token::Kind::minus);
@@ -191,8 +255,8 @@ public:
 
                 break;
             case '*':
-                if(match('*')) {
-                    make_token(Token::Kind::star_star);
+                if(match('=')) {
+                    make_token(Token::Kind::start_equal);
                 } else {
                     make_token(Token::Kind::star);
                 }
