@@ -1,35 +1,27 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PRATT_PARSER_H
+#define PRATT_PARSER_H
 
 #include <cstddef>
 #include <vector>
 #include <memory>
 #include <array>
-
-#ifdef __cpp_lib_concepts
 #include <concepts>
-#endif
 
-#ifdef __cpp_concepts
 template<typename T>
 concept IndexableToken = requires(T a) {
     { a.value } -> std::convertible_to<typename T::value_type>;
     { T::index(a.value) } -> std::same_as<std::size_t>;
-    { T::max_index() } -> std::same_as<std::size_t>;
+    { T::max_index_v } -> std::convertible_to<std::size_t>;
 };
 
 template<typename T>
 concept MovableExpression = std::move_constructible<T>;
-#else
-#define IndexableToken typename
-#define MovableExpression typename
-#endif
 
 template<IndexableToken Token_T, MovableExpression Expression_T>
-class Parser {
+class PrattParser {
 public:
-    using PrefixParselet_t = Expression_T (*)(int precedence, const Token_T &, Parser &parser);
-    using InfixParselet_t = Expression_T (*)(int precedence, Expression_T, const Token_T &, Parser &parser);
+    using PrefixParselet_t = Expression_T (*)(int precedence, const Token_T &, PrattParser &parser);
+    using InfixParselet_t = Expression_T (*)(int precedence, Expression_T, const Token_T &, PrattParser &parser);
 
 private:
     struct PrefixParselet {
@@ -42,8 +34,8 @@ private:
         InfixParselet_t func = nullptr;
     };
 
-    std::array<PrefixParselet, Token_T::max_index() + 1> m_prefixParselets;
-    std::array<InfixParselet, Token_T::max_index() + 1> m_infixParselets;
+    std::array<PrefixParselet, Token_T::max_index_v + 1> m_prefixParselets;
+    std::array<InfixParselet, Token_T::max_index_v + 1> m_infixParselets;
     const std::vector<Token_T> *m_tokens{};
     std::size_t *m_index = nullptr;
 
@@ -56,9 +48,10 @@ private:
     }
 
 public:
-    void init(const std::vector<Token_T> &tokens, std::size_t &index) {
+    Expression_T parseExpression(const std::vector<Token_T> &tokens, std::size_t &index) {
         m_index = &index;
         m_tokens = &tokens;
+        return parse();
     }
 
     void addPrefixParselet(typename Token_T::value_type value, int precedence, PrefixParselet_t prefixParselet) {

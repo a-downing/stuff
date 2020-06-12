@@ -6,7 +6,7 @@
 #include <memory>
 #include <array>
 
-#include "parser.h"
+#include "PrattParser.h"
 
 using namespace std::literals;
 
@@ -14,26 +14,25 @@ enum class TokenType {
     PLUS,
     MINUS,
     MUL,
+    DIV,
     BANG,
     LPAREN,
     RPAREN,
     NUMBER,
     SEMICOLON,
+    COMMA,
 
     END_VALUE
 };
 
 struct Token {
     using value_type = TokenType;
+    static constexpr std::size_t max_index_v = static_cast<std::size_t>(TokenType::END_VALUE) - 1;
     value_type value;
     std::string text;
 
     constexpr static std::size_t index(value_type v) {
         return static_cast<std::size_t>(v);
-    }
-
-    constexpr static std::size_t max_index() {
-        return static_cast<std::size_t>(TokenType::END_VALUE) - 1;
     }
 };
 
@@ -112,32 +111,28 @@ struct NumberExpression : public Expression {
 };
 
 int main() {
+    using PrattParser = PrattParser<Token, std::unique_ptr<Expression>>;
+
     std::vector<Token> tokens = {
         {TokenType::MINUS, "-"},
-        {TokenType::LPAREN, "("},
         {TokenType::NUMBER, "1"},
         {TokenType::PLUS, "+"},
         {TokenType::NUMBER, "2"},
-        {TokenType::RPAREN, ")"},
-        {TokenType::MUL, "*"},
+        {TokenType::COMMA, ","},
         {TokenType::NUMBER, "3"},
-        {TokenType::PLUS, "+"},
+        {TokenType::MUL, "*"},
         {TokenType::NUMBER, "4"},
-        {TokenType::BANG, "!"},
-        {TokenType::SEMICOLON, ";"},
+        {TokenType::COMMA, ","},
+        {TokenType::NUMBER, "5"},
+        {TokenType::DIV, "/"},
+        {TokenType::NUMBER, "6"}
     };
 
-    using Parser = Parser<Token, std::unique_ptr<Expression>>;
-
-    Parser parser;
-    std::size_t index = 0;
-    parser.init(tokens, index);
-
-    auto primaryParselet =  [](int precedence, const Token &token, Parser &parser) -> std::unique_ptr<Expression> {
+    auto primaryParselet =  [](int, const Token &token, PrattParser &) -> std::unique_ptr<Expression> {
         return std::make_unique<NumberExpression>(token);
     };
 
-    auto prefixParselet =  [](int precedence, const Token &token, Parser &parser) -> std::unique_ptr<Expression> {
+    auto prefixParselet =  [](int precedence, const Token &token, PrattParser &parser) -> std::unique_ptr<Expression> {
         auto right = parser.parse(precedence);
 
         if (!right) {
@@ -150,7 +145,7 @@ int main() {
         return ret;
     };
 
-    auto groupingParselet =  [](int precedence, const Token &token, Parser &parser) -> std::unique_ptr<Expression> {
+    auto groupingParselet =  [](int, const Token &token, PrattParser &parser) -> std::unique_ptr<Expression> {
         auto right = parser.parse();
 
         if (!right) {
@@ -168,7 +163,7 @@ int main() {
         return std::make_unique<PrefixExpression>(token, std::move(right));
     };
 
-    auto binaryParselet =  [](int precedence, std::unique_ptr<Expression> left, const Token &token, Parser &parser) -> std::unique_ptr<Expression> {
+    auto binaryParselet =  [](int precedence, std::unique_ptr<Expression> left, const Token &token, PrattParser &parser) -> std::unique_ptr<Expression> {
         auto right = parser.parse(precedence);
 
         if(!right) {
@@ -179,24 +174,30 @@ int main() {
         return std::make_unique<InfixExpression>(std::move(left), token, std::move(right));
     };
 
-    auto postfixParselet =  [](int precedence, std::unique_ptr<Expression> left, const Token &token, Parser &parser) -> std::unique_ptr<Expression> {
+    auto postfixParselet =  [](int, std::unique_ptr<Expression> left, const Token &token, PrattParser &) -> std::unique_ptr<Expression> {
         return std::make_unique<PostfixExpression>(std::move(left), token);
     };
 
-    parser.addInfixParselet(TokenType::PLUS, 1, binaryParselet);
-    parser.addInfixParselet(TokenType::MINUS, 1, binaryParselet);
+    PrattParser parser;
 
-    parser.addInfixParselet(TokenType::MUL, 2, binaryParselet);
-    parser.addInfixParselet(TokenType::BANG, 2, postfixParselet);
+    parser.addInfixParselet(TokenType::COMMA, 1, binaryParselet);
 
-    parser.addPrefixParselet(TokenType::PLUS, 3, prefixParselet);
-    parser.addPrefixParselet(TokenType::MINUS, 3, prefixParselet);
-    parser.addPrefixParselet(TokenType::BANG, 3, prefixParselet);
+    parser.addInfixParselet(TokenType::PLUS, 2, binaryParselet);
+    parser.addInfixParselet(TokenType::MINUS, 3, binaryParselet);
+
+    parser.addInfixParselet(TokenType::MUL, 3, binaryParselet);
+    parser.addInfixParselet(TokenType::DIV, 3, binaryParselet);
+    parser.addInfixParselet(TokenType::BANG, 3, postfixParselet);
+
+    parser.addPrefixParselet(TokenType::PLUS, 4, prefixParselet);
+    parser.addPrefixParselet(TokenType::MINUS, 4, prefixParselet);
+    parser.addPrefixParselet(TokenType::BANG, 4, prefixParselet);
 
     parser.addPrefixParselet(TokenType::NUMBER, 0, primaryParselet);
     parser.addPrefixParselet(TokenType::LPAREN, 0, groupingParselet);
 
-    auto expr = parser.parse();
+    std::size_t index = 0;
+    auto expr = parser.parseExpression(tokens, index);
 
     return 0;
 }

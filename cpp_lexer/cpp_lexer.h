@@ -1,12 +1,15 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "base_lexer.h"
+#include "lexer/BaseLexer.h"
 
+
+namespace cpp_lexer {
 using namespace std::literals;
 
 struct Token {
     enum class Kind {
+        invalid,
         identifier,
         number,
         string,
@@ -25,18 +28,24 @@ struct Token {
         slash_equal,
         caret,
         caret_equal,
-        lparen, rparen,
-        lbrace, rbrace,
-        lbracket, rbracket,
+        lparen,
+        rparen,
+        lbrace,
+        rbrace,
+        lbracket,
+        rbracket,
         semicolon,
         colon,
-        scope_resolution,
+        colon_colon,
         bang,
         bang_equal,
         comma,
-        lt, gt,
-        lte, gte,
-        lshift, rshift,
+        lt,
+        gt,
+        lte,
+        gte,
+        lshift,
+        rshift,
         ampersand,
         ampersand_ampersand,
         ampersand_equal,
@@ -52,21 +61,28 @@ struct Token {
         tilde_equal,
         pipe,
         pipe_pipe,
-        pipe_equal
+        pipe_equal,
+
+        _MAX_VALUE
     };
 
     using value_type = Kind;
+
+    static constexpr Kind invalid_v = Kind::invalid;
+    static constexpr std::size_t max_index_v = static_cast<std::size_t>(Kind::_MAX_VALUE) - 1;
 
     Kind value;
     std::string text;
     int line;
     int col;
+    std::size_t begin;
+    std::size_t end;
 
     static constexpr std::size_t index(Kind k) {
         return static_cast<std::size_t>(k);
     }
 
-    static constexpr const char *tokenKinds[] = {"identifier", "number", "string", "character", "equal", "equal_equal", "minus", "minus_minus", "minus_equal", "plus", "plus_plus", "plus_equal", "star", "start_equal", "slash", "slash_equal", "caret", "caret_equal", "lparen", "rparen", "lbrace", "rbrace", "lbracket", "rbracket", "semicolon", "colon", "scope_resolution", "bang", "bang_equal", "comma", "lt", "gt", "lte", "gte", "lshift", "rshift", "ampersand", "ampersand_ampersand", "ampersand_equal", "dot", "dot_star", "arrow", "comment", "macro", "question", "percent", "percent_equal", "tilde", "tilde_equal", "pipe", "pipe_pipe", "pipe_equal"};
+    static constexpr const char *tokenKinds[] = {"invalid", "identifier", "number", "string", "character", "equal", "equal_equal", "minus", "minus_minus", "minus_equal", "plus", "plus_plus", "plus_equal", "star", "start_equal", "slash", "slash_equal", "caret", "caret_equal", "lparen", "rparen", "lbrace", "rbrace", "lbracket", "rbracket", "semicolon", "colon", "colon_colon", "bang", "bang_equal", "comma", "lt", "gt", "lte", "gte", "lshift", "rshift", "ampersand", "ampersand_ampersand", "ampersand_equal", "dot", "dot_star", "arrow", "comment", "macro", "question", "percent", "percent_equal", "tilde", "tilde_equal", "pipe", "pipe_pipe", "pipe_equal"};
 
     static constexpr const char *name(Kind k) {
         return tokenKinds[index(k)];
@@ -240,7 +256,7 @@ public:
                 break;
             case ':':
                 if(match(':')) {
-                    make_token(Token::Kind::scope_resolution);
+                    make_token(Token::Kind::colon_colon);
                 } else {
                     make_token(Token::Kind::colon);
                 }
@@ -401,5 +417,7 @@ public:
         return ok();
     }
 };
+
+}
 
 #endif

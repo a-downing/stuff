@@ -1,12 +1,15 @@
 #ifndef BASE_LEXER_CORE_H
 #define BASE_LEXER_CORE_H
 
+#include <cstdlib>
 #include <string>
 #include <string_view>
 #include <concepts>
 
+#include <cstdio>
+
 class BaseLexerCore {
-    const std::string_view *m_str;
+    std::string_view m_str;
     const char *m_current;
     const char *m_start;
     const char *m_end;
@@ -26,6 +29,14 @@ protected:
 
     [[nodiscard]] int col() const {
         return m_col_start;
+    }
+
+    std::size_t begin_offset() const {
+        return m_start - m_str.data();
+    }
+
+    std::size_t end_offset() const {
+        return m_current - m_str.data();
     }
 
     void reset() {
@@ -74,10 +85,10 @@ protected:
     }
 
 public:
-    void lex(const std::string_view &str) {
-        m_str = &str;
-        m_current = m_str->data();
-        m_end = m_current + m_str->size();
+    void lex(const std::string_view str) {
+        m_str = str;
+        m_current = m_str.data();
+        m_end = m_current + m_str.size();
         m_line = 1;
         m_col = 1;
     }

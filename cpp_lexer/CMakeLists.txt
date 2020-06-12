@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(cpp_lexer main.cpp)
 
-target_include_directories(cpp_lexer PRIVATE "../lexer")
+target_include_directories(cpp_lexer PRIVATE "../")
 
 target_compile_options(cpp_lexer PRIVATE
     -g

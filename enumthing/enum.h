@@ -58,8 +58,8 @@ struct Enum {
             }
         }
 
-        // bug?
-        ///*if(name == name)*/ assert(!"no such name");
+        // gcc bug?
+        assert(!"no such name");
         return U{0};
     }
 
@@ -74,8 +74,8 @@ struct Enum {
             }
         }
 
-        // bug?
-        ///*if(u == u)*/ assert(!"no such value");
+        // gcc bug?
+        assert(!"no such value");
         return "";
     }
 

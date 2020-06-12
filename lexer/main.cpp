@@ -5,7 +5,7 @@
 #include <fstream>
 #include <concepts>
 
-#include "base_lexer.h"
+#include "BaseLexer.h"
 
 using namespace std::literals;
 
@@ -32,6 +32,8 @@ struct Token {
     std::string text;
     int line;
     int col;
+    std::size_t begin;
+    std::size_t end;
 
     static constexpr std::size_t index(Kind k) {
         return static_cast<std::size_t>(k);
@@ -95,9 +97,7 @@ public:
 
             if(!handled) {
                 if(std::isspace(c)) {
-                    if(c == '\n') {
-                        newline();
-                    }
+
                 } else if(c == '_' || std::isalpha(c)) {
                     if(eat_identifier()) {
                         make_token(Token::Kind::identifier);
@@ -160,12 +160,7 @@ public:
                 advance();
             }
 
-            if(check('\n')) {
-                advance();
-                newline();
-            } else {
-                advance();
-            }
+            advance();
         }
 
         if(end()) {
@@ -211,7 +206,7 @@ int main() {
     //std::printf("total tokens processed: %d\n", total);
 
     for(const auto &token : tokens) {
-        std::printf("token %s: \"%s\"\n    line: %d\n    col: %d\n\n", Token::name(token.value), token.text.c_str(), token.line, token.col);
+        std::printf("token %s: \"%s\"\n    line: %d\n    col: %d\n    begin: %zu\n    end: %zu\n", Token::name(token.value), token.text.c_str(), token.line, token.col, token.begin, token.end);
     }
 
     for(const auto &error : errors) {

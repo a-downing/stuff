@@ -5,9 +5,10 @@
 #include <fstream>
 #include <concepts>
 
-#include "lexer.h"
+#include "cpp_lexer.h"
 
 using namespace std::literals;
+using namespace cpp_lexer;
 
 std::string readFile(const char *filename) {
     std::ifstream f(filename);
@@ -30,7 +31,16 @@ int main(int, char **argv) {
     std::vector<Lexer::Error> errors;
     std::string code = readFile(argv[1]);
 
-    lexer.lex(code, tokens, errors);
+    //int total = 0;
+
+    //for(int i = 0; i < 100000; i++) {
+    //    tokens.clear();
+    //    errors.clear();
+        lexer.lex(code, tokens, errors);
+    //    total += tokens.size();
+    //}
+
+    //printf("total tokens: %d\n", total);
 
     for(const auto &token : tokens) {
         std::printf("token %s: \"%s\"\n    line: %d\n    col: %d\n\n", Token::name(token.value), token.text.c_str(), token.line, token.col);
