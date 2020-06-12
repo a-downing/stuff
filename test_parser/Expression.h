@@ -18,20 +18,37 @@ struct Expression {
     [[nodiscard]] virtual std::string_view name() const = 0;
 };
 
-struct PrefixExpression : public Expression {
+struct UnaryExpression : public Expression {
     Token oper;
     std::unique_ptr<Expression> right;
 
-    explicit PrefixExpression(Token oper, std::unique_ptr<Expression> right) : oper(std::move(oper)), right(std::move(right)) {
+    explicit UnaryExpression(Token oper, std::unique_ptr<Expression> right) : oper(std::move(oper)), right(std::move(right)) {
         std::puts(toString().c_str());
     }
 
     [[nodiscard]] std::string_view name() const override {
-        return "PrefixExpression";
+        return "UnaryExpression";
     };
 
     [[nodiscard]] std::string toString() const override {
         return "("s + std::string(name()) + " "s + oper.text + right->toString() + ")"s;
+    }
+};
+
+struct GroupExpression : public Expression {
+    Token token;
+    std::unique_ptr<Expression> expr;
+
+    explicit GroupExpression(Token token, std::unique_ptr<Expression> expr) : token(std::move(token)), expr(std::move(expr)) {
+        std::puts(toString().c_str());
+    }
+
+    [[nodiscard]] std::string_view name() const override {
+        return "GroupExpression";
+    };
+
+    [[nodiscard]] std::string toString() const override {
+        return "("s + std::string(name()) + " "s + token.text + expr->toString() + ")"s;
     }
 };
 
@@ -52,17 +69,17 @@ struct PostfixExpression : public Expression {
     }
 };
 
-struct InfixExpression : public Expression {
+struct BinaryExpression : public Expression {
     std::unique_ptr<Expression> left;
     Token oper;
     std::unique_ptr<Expression> right;
 
-    explicit InfixExpression(std::unique_ptr<Expression> left, Token oper, std::unique_ptr<Expression> right) : left(std::move(left)), oper(std::move(oper)), right(std::move(right)) {
+    explicit BinaryExpression(std::unique_ptr<Expression> left, Token oper, std::unique_ptr<Expression> right) : left(std::move(left)), oper(std::move(oper)), right(std::move(right)) {
         std::puts(toString().c_str());
     }
 
     [[nodiscard]] std::string_view name() const override {
-        return "InfixExpression";
+        return "BinaryExpression";
     };
 
     [[nodiscard]] std::string toString() const override {

@@ -30,9 +30,9 @@ public:
         m_parser.addInfixParselet(Token::value_type::slash, 3, binaryParselet);
         m_parser.addInfixParselet(Token::value_type::bang, 3, postfixParselet);
 
-        m_parser.addPrefixParselet(Token::value_type::plus, 4, prefixParselet);
-        m_parser.addPrefixParselet(Token::value_type::minus, 4, prefixParselet);
-        m_parser.addPrefixParselet(Token::value_type::bang, 4, prefixParselet);
+        m_parser.addPrefixParselet(Token::value_type::plus, 4, unaryParselet);
+        m_parser.addPrefixParselet(Token::value_type::minus, 4, unaryParselet);
+        m_parser.addPrefixParselet(Token::value_type::bang, 4, unaryParselet);
 
         m_parser.addPrefixParselet(Token::value_type::identifier, 0, primaryParselet);
         m_parser.addPrefixParselet(Token::value_type::number, 0, primaryParselet);
@@ -61,7 +61,7 @@ private:
         }
     }
 
-    static std::unique_ptr<Expression> prefixParselet(int precedence, const Token &token, ExpressionParser &parser) {
+    static std::unique_ptr<Expression> unaryParselet(int precedence, const Token &token, ExpressionParser &parser) {
         auto right = parser.parse(precedence);
 
         if (!right) {
@@ -69,7 +69,7 @@ private:
             return nullptr;
         }
 
-        auto ret = std::make_unique<PrefixExpression>(token, std::move(right));
+        auto ret = std::make_unique<UnaryExpression>(token, std::move(right));
         std::puts(token.text.c_str());
         return ret;
     }
@@ -89,7 +89,7 @@ private:
         }
 
         parser.consume();
-        return std::make_unique<PrefixExpression>(token, std::move(right));
+        return std::make_unique<GroupExpression>(token, std::move(right));
     };
 
     static std::unique_ptr<Expression> binaryParselet(int precedence, std::unique_ptr<Expression> left, const Token &token, ExpressionParser &parser) {
@@ -100,7 +100,7 @@ private:
             return nullptr;
         }
 
-        return std::make_unique<InfixExpression>(std::move(left), token, std::move(right));
+        return std::make_unique<BinaryExpression>(std::move(left), token, std::move(right));
     };
 
     static std::unique_ptr<Expression> postfixParselet(int, std::unique_ptr<Expression> left, const Token &token, ExpressionParser &) {
