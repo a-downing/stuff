@@ -31,7 +31,7 @@ struct UnaryExpression : public Expression {
     };
 
     [[nodiscard]] std::string toString() const override {
-        return "("s + std::string(name()) + " "s + oper.text + right->toString() + ")"s;
+        return "("s + std::string(name()) + " "s + oper.text + " "s + right->toString() + ")"s;
     }
 };
 
@@ -65,7 +65,7 @@ struct PostfixExpression : public Expression {
     };
 
     [[nodiscard]] std::string toString() const override {
-        return "("s + std::string(name()) + " "s + left->toString() + oper.text + ")"s;
+        return "("s + std::string(name()) + " "s + left->toString() + " "s + oper.text + ")"s;
     }
 };
 
